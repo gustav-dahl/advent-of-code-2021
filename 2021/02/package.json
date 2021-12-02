@@ -1,16 +1,8 @@
 {
-  "name": "aoc-monorepo",
-  "workspaces": [
-    "2020/*",
-    "2021/*"
-  ],
-  "private": true,
-  "scripts": {
-    "bootstrap": "npx lerna bootstrap"
-  },
+  "name": "aoc-2021-02",
+  "version": "0.0.0",
   "dependencies": {
-    "lodash": "^4.17.21",
-    "ts-pattern": "^3.3.3"
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
     "@types/jest": "~27.0.1",
@@ -30,10 +22,15 @@
     "tsutils": "~3.21.0",
     "typescript": "~4.4.3"
   },
-  "importSort": {
-    ".js, .jsx, .ts, .tsx": {
-      "style": "module",
-      "parser": "typescript"
-    }
+  "scripts": {
+    "start": "node build/main.js",
+    "clean": "rimraf coverage build tmp",
+    "prebuild": "npm run lint",
+    "build": "tsc -p tsconfig.release.json",
+    "build:watch": "tsc -w -p tsconfig.release.json",
+    "lint": "eslint . --ext .ts,.tsx",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch",
+    "copyfiles": "copyfiles -u 1 src/**/*.txt build/"
   }
 }
