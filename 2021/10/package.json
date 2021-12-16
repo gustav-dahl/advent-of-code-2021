@@ -1,0 +1,36 @@
+{
+  "name": "aoc-2021-10",
+  "version": "0.0.0",
+  "dependencies": {
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "@types/jest": "~27.0.1",
+    "@types/lodash": "^4.14.175",
+    "@types/node": "~14.14.45",
+    "@typescript-eslint/eslint-plugin": "~4.31.1",
+    "@typescript-eslint/parser": "~4.31.1",
+    "copyfiles": "^2.4.1",
+    "eslint": "~7.32.0",
+    "eslint-config-prettier": "~8.3.0",
+    "eslint-plugin-jest": "~24.4.2",
+    "jest": "~27.2.0",
+    "prettier": "~2.4.1",
+    "rimraf": "~3.0.2",
+    "ts-jest": "~27.0.5",
+    "tslib": "~2.3.1",
+    "tsutils": "~3.21.0",
+    "typescript": "~4.4.3"
+  },
+  "scripts": {
+    "start": "node build/main.js",
+    "clean": "rimraf coverage build tmp",
+    "prebuild": "npm run lint",
+    "build": "tsc -p tsconfig.release.json",
+    "build:watch": "tsc -w -p tsconfig.release.json",
+    "lint": "eslint . --ext .ts,.tsx",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch",
+    "copyfiles": "copyfiles -u 1 src/**/*.txt build/"
+  }
+}
