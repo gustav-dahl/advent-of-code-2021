@@ -1,22 +1,36 @@
-import { count } from 'console';
 import {
   chain,
   compact,
-  countBy,
-  flatMap,
-  head,
-  isArray,
-  isEmpty,
+  find,
+  isNumber,
+  isString,
   last,
-  map,
   reduce,
-  sum,
-  tail,
   without,
-  zip,
 } from 'lodash';
 
 const log = console.log;
+
+export type Board = (number | string)[][];
+
+const isMarked = (x: number | string) => isString(x) && x === 'x';
+
+const isHorizontalWin = (board: Board) => board.some((x) => x.every(isMarked));
+
+const transpose = (board: Board) =>
+  board[0].map((x, i) => board.map((x) => x[i]));
+
+const isVerticalWin = (board: Board) => isHorizontalWin(transpose(board));
+
+export const isWinner = (board: Board) =>
+  isVerticalWin(board) || isHorizontalWin(board);
+
+const markBoards = (calledNumber: number) => (board: Board) =>
+  chain(board)
+    .flatten()
+    .map((x) => (x === calledNumber ? 'x' : x))
+    .chunk(5)
+    .value();
 
 const extractRandomNumbers = (input: string) =>
   chain(input)
@@ -26,7 +40,7 @@ const extractRandomNumbers = (input: string) =>
     .map((x) => parseInt(x))
     .value();
 
-const extractBoards = (input: string) =>
+const extractBoards = (input: string): Board[] =>
   chain(input)
     .split('\r\n')
     .tail()
@@ -41,114 +55,77 @@ export const run = (
   const randomNumbers = extractRandomNumbers(input);
   const boards = extractBoards(input);
 
-  //log(randomNumbers);
-  //log(boards);
-
-  const markBoards = (calledNumber: number) => (board: number[][]) => {
-    return board.map((x) => without(x, calledNumber));
+  type Round = {
+    round: number;
+    calledNumbers: number[];
+    winners: Board[];
+    boards: Board[];
   };
 
-  const checkForWinner = (boards: number[][][]) =>
-    boards.map(isWinner).findIndex((x) => x === true);
+  const rounds: Round[] = [
+    {
+      round: 0,
+      calledNumbers: [],
+      winners: [],
+      boards: boards,
+    },
+  ];
 
-  const isWinner = (board: number[][]) =>
-    !chain(board).filter(isEmpty).isEmpty().value() ||
-    !chain(board).zip().filter(isEmpty).isEmpty().value();
+  const result = reduce(
+    randomNumbers,
+    (rounds, calledNumber) => {
+      const lastRound = last(rounds);
+      const updateBoards = lastRound.boards.map(markBoards(calledNumber));
 
-  // --------------------------------------------------------------------------
-  // Part 1
-  // --------------------------------------------------------------------------
+      const calledNumbers = [...lastRound.calledNumbers, calledNumber];
+      const winners = [...lastRound.winners, ...updateBoards.filter(isWinner)];
+      const boards = without(updateBoards, ...winners);
+
+      return [
+        ...rounds,
+        {
+          round: lastRound.round + 1,
+          calledNumbers,
+          winners,
+          boards,
+        },
+      ];
+    },
+    rounds,
+  );
+
+  //log(result);
+
   const part1 = () => {
-    const result = reduce(
-      randomNumbers,
-      (result, calledNumber) => {
-        if (result.winner) {
-          return result;
-        }
-
-        const updateBoards = result.boards.map(markBoards(calledNumber));
-        const winner = checkForWinner(updateBoards);
-
-        return {
-          boards: updateBoards,
-          calledNumbers: [...result.calledNumbers, calledNumber],
-          winner: !result.winner && winner !== -1 ? winner : undefined,
-        };
-      },
-      { boards, calledNumbers: [], winner: undefined },
-    );
-
-    log(result);
-
-    const winningBoard = result.boards[result.winner];
-    const calledWinnigNumber = last(result.calledNumbers);
-
-    const foo = chain(winningBoard)
-      .map((x) => sum(x))
+    const round = find(result, (x) => x.winners.length === 1);
+    const calledNumber = last(round.calledNumbers);
+    const sumUnmarkedNumbers = chain(round.winners)
+      .first()
+      .flatten()
+      .filter(isNumber)
       .sum()
       .value();
-    log(foo);
 
-    return foo * calledWinnigNumber;
+    //log(calledNumber);
+    //log(sumUnmarkedNumbers);
+
+    return calledNumber * sumUnmarkedNumbers;
   };
 
-  // --------------------------------------------------------------------------
-  // Part 2
-  // --------------------------------------------------------------------------
   const part2 = () => {
-    const checkForLastWinner = (boards: number[][][]) => {
-      const foo = chain(boards)
-        .map(isWinner)
-        .countBy((x) => x)
-        .value();
-
-      log(foo);
-      if (foo.false === undefined) {
-        return -999;
-      }
-      if (foo.false === 1) {
-        return boards.map(isWinner).findIndex((x) => x === false);
-      }
-
-      return -1;
-    };
-
-    const result = reduce(
-      randomNumbers,
-      (result, calledNumber) => {
-        //log(result);
-        //if (result.lastWinner !== -1) {
-        //  return result;
-        //}
-
-        const updateBoards = result.boards.map(markBoards(calledNumber));
-        const lastWinner = checkForLastWinner(updateBoards);
-
-        if (lastWinner === -999) {
-          return result;
-        }
-
-        return {
-          boards: updateBoards,
-          calledNumbers: [...result.calledNumbers, calledNumber],
-          lastWinner: lastWinner,
-        };
-      },
-      { boards, calledNumbers: [], lastWinner: -1 },
-    );
-
-    log(result);
-
-    const lastWinnerBoard = result.boards[result.lastWinner];
-    const calledWinnigNumber = last(result.calledNumbers);
-
-    const foo = chain(lastWinnerBoard)
-      .map((x) => sum(x))
+    const round = find(result, (x) => x.boards.length === 0);
+    const calledNumber = last(round.calledNumbers);
+    const sumUnmarkedNumbers = chain(round.winners)
+      .last()
+      .flatten()
+      .filter(isNumber)
       .sum()
       .value();
-    log(foo);
 
-    return foo * calledWinnigNumber;
+    //log(calledNumber);
+    //log(sumUnmarkedNumbers);
+
+    return calledNumber * sumUnmarkedNumbers;
   };
 
   return { part1, part2 };
